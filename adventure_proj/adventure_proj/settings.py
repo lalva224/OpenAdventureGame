@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 from dotenv import load_dotenv
 import os
+from datetime import timedelta
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -40,10 +41,22 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'user_app',
     'controller_app',
     'rest_framework',
-    'corsheaders'
+    'corsheaders',
+    'rest_framework.authtoken'
 ]
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'SIMPLE_JWT': {
+        'ACCESS_TOKEN_LIFETIME': timedelta(hours=5),  # Example: Token expires after 15 minutes
+        # Other optional settings like refresh token lifetime, etc.
+    }
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -110,7 +123,7 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
+AUTH_USER_MODEL = 'user_app.User'
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 

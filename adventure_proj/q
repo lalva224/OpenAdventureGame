@@ -1,0 +1,31 @@
+                          List of relations
+ Schema |                 Name                  |   Type   |  Owner   
+--------+---------------------------------------+----------+----------
+ public | auth_group                            | table    | lalva224
+ public | auth_group_id_seq                     | sequence | lalva224
+ public | auth_group_permissions                | table    | lalva224
+ public | auth_group_permissions_id_seq         | sequence | lalva224
+ public | auth_permission                       | table    | lalva224
+ public | auth_permission_id_seq                | sequence | lalva224
+ public | authtoken_token                       | table    | lalva224
+ public | cart_app_cart                         | table    | lalva224
+ public | cart_app_cart_id_seq                  | sequence | lalva224
+ public | cart_app_cart_item                    | table    | lalva224
+ public | cart_app_cart_item_id_seq             | sequence | lalva224
+ public | django_admin_log                      | table    | lalva224
+ public | django_admin_log_id_seq               | sequence | lalva224
+ public | django_content_type                   | table    | lalva224
+ public | django_content_type_id_seq            | sequence | lalva224
+ public | django_migrations                     | table    | lalva224
+ public | django_migrations_id_seq              | sequence | lalva224
+ public | django_session                        | table    | lalva224
+ public | item_app_item                         | table    | lalva224
+ public | item_app_item_id_seq                  | sequence | lalva224
+ public | user_app_user                         | table    | lalva224
+ public | user_app_user_groups                  | table    | lalva224
+ public | user_app_user_groups_id_seq           | sequence | lalva224
+ public | user_app_user_id_seq                  | sequence | lalva224
+ public | user_app_user_user_permissions        | table    | lalva224
+ public | user_app_user_user_permissions_id_seq | sequence | lalva224
+(26 rows)
+
