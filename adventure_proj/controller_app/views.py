@@ -17,7 +17,7 @@ load_dotenv()
 class getNewChat(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    def get(self,request):
+    def post(self,request):
         print('inside get new chat')
         #send original prompt, create new chatHistory object and save it.
         genai.configure(api_key=os.getenv('API_KEY'))
@@ -44,54 +44,57 @@ class getNewChat(APIView):
         serialized_history = ChatHistorySerializer(chat_history)
         return Response(serialized_history.data['messages'],status=status.HTTP_200_OK)
 
+class Start(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
+    def get(self,request):
+        #check chat history, if none create. If there is just retrieve it.
+        try:
+            chat_history = ChatHistory.objects.get(client = request.user)
+            serialized_history = ChatHistorySerializer(chat_history)
+            return Response(serialized_history.data['messages'],status=status.HTTP_200_OK)
+        except ChatHistory.DoesNotExist:
+            return getNewChat.post(self,request)
+        
 class PromptGemini(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
     def get(self,request):
         #check if this user has chatHistory. If not then create a new message sending the og prompt
-        try:
-            chat_history = ChatHistory.objects.get(client = request.user)
-            serialized_history = ChatHistorySerializer(chat_history)
-            print(serialized_history)
-            genai.configure(api_key=os.getenv('API_KEY'))
-            model = genai.GenerativeModel('gemini-pro')
-            chat = model.start_chat(history=serialized_history.data['messages'])
-            
-            prompt = request.data.get('prompt')
-            chat.send_message(prompt)
-            current_message = chat_history.number_of_messages
-            print('current message:',current_message)
-            #chat.history is the actual gemini object containing our history.  index at current message will be for the user prompt. +1 is for the model response
-            text_prompt = chat.history[current_message].parts[0].text
-            role_prompt = chat.history[current_message].role
-            text_response = chat.history[current_message+1].parts[0].text
-            role_response = chat.history[current_message+1].role
-           
-            chat_message_prompt = chatMessage(chatLog=chat_history,parts=text_prompt,role=role_prompt)
-            chat_message_response = chatMessage(chatLog=chat_history,parts=text_response,role=role_response)
-            chat_history.addMessage(chat_message_prompt)
-            chat_history.addMessage(chat_message_response)
-            updated_serialized_history = ChatHistorySerializer(chat_history)
-            return Response(updated_serialized_history.data['messages'],status=status.HTTP_200_OK)
+        chat_history = ChatHistory.objects.get(client = request.user)
+        serialized_history = ChatHistorySerializer(chat_history)
+        print(serialized_history)
+        genai.configure(api_key=os.getenv('API_KEY'))
+        model = genai.GenerativeModel('gemini-pro')
+        chat = model.start_chat(history=serialized_history.data['messages'])
+        
+        prompt = request.data.get('prompt')
+        chat.send_message(prompt)
+        current_message = chat_history.number_of_messages
+        print('current message:',current_message)
+        #chat.history is the actual gemini object containing our history.  index at current message will be for the user prompt. +1 is for the model response
+        text_prompt = chat.history[current_message].parts[0].text
+        role_prompt = chat.history[current_message].role
+        text_response = chat.history[current_message+1].parts[0].text
+        role_response = chat.history[current_message+1].role
+        
+        chat_message_prompt = chatMessage(chatLog=chat_history,parts=text_prompt,role=role_prompt)
+        chat_message_response = chatMessage(chatLog=chat_history,parts=text_response,role=role_response)
+        chat_history.addMessage(chat_message_prompt)
+        chat_history.addMessage(chat_message_response)
+        updated_serialized_history = ChatHistorySerializer(chat_history)
+        return Response(updated_serialized_history.data['messages'],status=status.HTTP_200_OK)
 
-        except ChatHistory.DoesNotExist:
-            return getNewChat.get(self,request)
-            
+class End_Game(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]      
+    def delete(self,request):
+        #delete chat history and bring us a new chat
+        chat_history = ChatHistory.objects.get(client=request.user)   
+        chat_history.delete() 
+        return getNewChat.post(self,request) 
             
 
-def testChatHistory(request):
-    genai.configure(api_key=os.getenv('API_KEY'))
-    model = genai.GenerativeModel('gemini-pro')
-    chat = model.start_chat(history=[])
-    responses =chat.send_message(PROMPT)
-    print(chat.history[0].parts)
-#________________________
-    return Response(chat.history)
     
 
-    #   serialized_history = ChatHistorySerializer(chat_history)
-    #     parts = serialized_history.data['messages']['parts']
-    #     is_empty = len(parts)==0
-    #     print(parts)
-    #     print(is_empty)
