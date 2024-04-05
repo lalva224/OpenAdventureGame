@@ -6,10 +6,15 @@ class ChatHistory(models.Model):
     client = models.OneToOneField('user_app.User',on_delete=models.CASCADE)
     number_of_messages = models.IntegerField(default=0)
 
-    def addMessage(self,chatMessage):
+    def addMessage(self,chat_message):
         self.number_of_messages+=1
-        chatMessage.save()
+        self.save()
+        chat_message.save()
 
+    
 class chatMessage(models.Model):
     chatLog = models.ForeignKey(ChatHistory,on_delete=models.CASCADE,related_name='chatMessages')
-    message = models.TextField()
+    parts = models.TextField()
+    role = models.TextField()
+    def __str__(self):
+        return self.message
