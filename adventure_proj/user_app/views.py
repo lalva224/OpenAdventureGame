@@ -30,6 +30,8 @@ class Login(APIView):
         user = authenticate(username=username,password=password)
         if user:
             token,created = Token.objects.get_or_create(user=user)
+            if created:
+                print(token)
             return Response({"user":username,"token":token.key},status=status.HTTP_200_OK)
         else:
             return Response("Please enter correct credentials",status=status.HTTP_400_BAD_REQUEST)

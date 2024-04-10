@@ -1,11 +1,12 @@
 import React from "react";
 import { useState ,useEffect} from "react";
 import Option from  './Options'
-export const  ChatMessage =({role,message})=>{
+export const  ChatMessage =({role,message, setChatHistory})=>{
     // need to separate prompt from options.
     //  / means delimiter for regex expression   \* is escape sequence so i can use *. \d is for numbers [0-9]
 
     const [option_list,setOptionList] = useState([])
+    const [decision,setDecision] = useState('')
     const [prompt,setPrompt] = useState('')
     const optionsSelector = ()=>{
         if(role=='model'){
@@ -37,9 +38,9 @@ export const  ChatMessage =({role,message})=>{
                     <p>Role: {role}: {prompt}</p>
                     {
     
-                        option_list.map((text,index)=>(
-                            <Option key ={index} text = {text}/>
-                        ))
+                        option_list.map((text,index)=>{
+                            return <Option key ={index} text = {text} setChatHistory = {setChatHistory}/>
+})
                     }
                 </>
                 )

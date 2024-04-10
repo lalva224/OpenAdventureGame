@@ -60,7 +60,7 @@ class Start(APIView):
 class PromptGemini(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
-    def get(self,request):
+    def post(self,request):
         #check if this user has chatHistory. If not then create a new message sending the og prompt
         chat_history = ChatHistory.objects.get(client = request.user)
         serialized_history = ChatHistorySerializer(chat_history)
@@ -70,6 +70,7 @@ class PromptGemini(APIView):
         chat = model.start_chat(history=serialized_history.data['messages'])
         
         prompt = request.data.get('prompt')
+        print(prompt)
         chat.send_message(prompt)
         current_message = chat_history.number_of_messages
         print('current message:',current_message)
@@ -83,6 +84,7 @@ class PromptGemini(APIView):
         chat_message_response = chatMessage(chatLog=chat_history,parts=text_response,role=role_response)
         chat_history.addMessage(chat_message_prompt)
         chat_history.addMessage(chat_message_response)
+
         updated_serialized_history = ChatHistorySerializer(chat_history)
         return Response(updated_serialized_history.data['messages'],status=status.HTTP_200_OK)
 
@@ -93,7 +95,7 @@ class End_Game(APIView):
         #delete chat history and bring us a new chat
         chat_history = ChatHistory.objects.get(client=request.user)   
         chat_history.delete() 
-        return getNewChat.post(self,request) 
+        return Response(status=status.HTTP_204_NO_CONTENT)
             
 
     

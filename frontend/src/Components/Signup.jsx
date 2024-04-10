@@ -83,8 +83,13 @@ export function SignIn(){
             'username':username,
             'password':password
         }
+        console.log(data)
+        //if we're logged out we will be under a different token. Get rid of this header and allow for a new token to be created.
+        api.defaults.headers.common['Authorization'] = null
         let response = await api.post('users/login/',data)
+        console.log(response.data)
         const {token} = response.data
+        console.log(token)
         localStorage.setItem('token',token)
         api.defaults.headers.common['Authorization'] = `token ${token}`
         if(response.status==200){
