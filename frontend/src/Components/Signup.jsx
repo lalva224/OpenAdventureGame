@@ -43,8 +43,8 @@ export function SignUp(){
         else if(response.status==500){
             return <p>User already exists!</p>
         }
-
     }
+    
     return (
         <>
         <h1 className="text-center">Sign up!!</h1>

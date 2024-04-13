@@ -10,10 +10,28 @@ from IPython.display import display
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from .models import ChatHistory,chatMessage
-from .serializer import ChatHistorySerializer
+from .serializer import ChatHistorySerializer,ChatMessageAISerializer,ChatHistoryAISerializer
+from openai import OpenAI
+from .prompt import IMAGERY
+import requests
+import io
+from PIL import Image
+import time
+from google.cloud import storage
+from google.oauth2 import service_account
+from django.http import JsonResponse
+import json
+import boto3
+
 
 load_dotenv()
 
+s3 = boto3.client(
+    's3',
+    aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+    aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
+)
+    
 class getNewChat(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
@@ -48,7 +66,7 @@ class Start(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get(self,request):
+    def post(self,request):
         #check chat history, if none create. If there is just retrieve it.
         try:
             chat_history = ChatHistory.objects.get(client = request.user)
@@ -60,33 +78,35 @@ class Start(APIView):
 class PromptGemini(APIView):
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
+
     def post(self,request):
         #check if this user has chatHistory. If not then create a new message sending the og prompt
         chat_history = ChatHistory.objects.get(client = request.user)
-        serialized_history = ChatHistorySerializer(chat_history)
-        print(serialized_history)
+        serialized_history = ChatHistoryAISerializer(chat_history)
         genai.configure(api_key=os.getenv('API_KEY'))
         model = genai.GenerativeModel('gemini-pro')
         chat = model.start_chat(history=serialized_history.data['messages'])
         
         prompt = request.data.get('prompt')
-        print(prompt)
         chat.send_message(prompt)
         current_message = chat_history.number_of_messages
-        print('current message:',current_message)
         #chat.history is the actual gemini object containing our history.  index at current message will be for the user prompt. +1 is for the model response
         text_prompt = chat.history[current_message].parts[0].text
         role_prompt = chat.history[current_message].role
+
         text_response = chat.history[current_message+1].parts[0].text
         role_response = chat.history[current_message+1].role
         
-        chat_message_prompt = chatMessage(chatLog=chat_history,parts=text_prompt,role=role_prompt)
-        chat_message_response = chatMessage(chatLog=chat_history,parts=text_response,role=role_response)
+        chat_message_prompt = chatMessage.objects.create(chatLog=chat_history,parts=text_prompt,role=role_prompt)
+        chat_message_response = chatMessage.objects.create(chatLog=chat_history,parts=text_response,role=role_response)
         chat_history.addMessage(chat_message_prompt)
         chat_history.addMessage(chat_message_response)
-
+        
+        
         updated_serialized_history = ChatHistorySerializer(chat_history)
+        print(updated_serialized_history.data['messages'])
         return Response(updated_serialized_history.data['messages'],status=status.HTTP_200_OK)
+
 
 class End_Game(APIView):
     authentication_classes = [TokenAuthentication]
@@ -97,6 +117,68 @@ class End_Game(APIView):
         chat_history.delete() 
         return Response(status=status.HTTP_204_NO_CONTENT)
             
+class get_Image(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
 
+    def post(self,request):
+        #get chat history
+        chat_history = ChatHistory.objects.get(client = request.user)
+        serialized_history = ChatHistoryAISerializer(chat_history)
+        genai.configure(api_key=os.getenv('API_KEY'))
+        model = genai.GenerativeModel('gemini-pro')
+        chat = model.start_chat(history=serialized_history.data['messages'])
+
+        #send request for imagery of current situation
+        chat.send_message('Provide me with descriptive text/imagery of the current situation. Provide me with good visual text.')
+        current_message = chat_history.number_of_messages
+        imagery = chat.history[current_message+1].parts[0].text
+        print('\n\n\n\n',imagery,'\n\n\n\n')
+
+
+        #send imagery to DALLE
+        client = OpenAI(api_key=os.getenv('CHAT_KEY'))
+        response = client.images.generate(model="dall-e-3",prompt=imagery,size="1024x1024",quality="standard",n=1)
+        image_url = response.data[0].url
+
+        #save image to google cloud and retrieve its url.
+        cloud_url = save_image(image_url)
+
+        #need to get current message from user's chat history
+        #actual current message is the imagery
+        latest_chat_message =chatMessage.objects.latest('created_at')
+        latest_chat_message.image = cloud_url
+        latest_chat_message.save()
+        chat_history.save()
+        print(latest_chat_message.image)
+        return Response(cloud_url,status=status.HTTP_200_OK)
     
 
+
+def save_image(temp_image):
+    try:
+        image_url = temp_image
+        #we need to turn it into a jpg (bc dalle urls expire after 1 hr) then store into google cloud and retrieve that url
+        # Fetch the image data from the provided URL
+        response = requests.get(image_url)
+        image_data = io.BytesIO(response.content)
+        
+        # Open image using PIL
+        image = Image.open(image_data)
+        
+        # Convert the image to JPEG format
+        output = io.BytesIO()
+        image.save(output, format='JPEG')
+        jpeg_data = output.getvalue()
+        
+        # Create a unique filename
+        filename = f"{int(time.time())}.jpeg"
+        
+        s3.put_object(Body=jpeg_data, Bucket='openadventureimages', Key=filename, ContentType='image/jpeg')
+
+        # Get the URL of the uploaded image
+        image_url = f"https://openadventureimages.s3.amazonaws.com/{filename}"
+        return image_url
+    except Exception as e:
+          print('Error proxying image:', e)
+          return JsonResponse({'error': 'An error occurred while proxying the image'}, status=500)

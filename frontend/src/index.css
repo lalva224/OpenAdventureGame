@@ -5,3 +5,23 @@
 .option-background{
     background-color: #D0D09C;
 }
+.message-background{
+    background-color: #0D90C7;
+}
+.btn:disabled:hover {
+    cursor: not-allowed;
+  }
+
+  p{
+    font-family: 'google-sans';
+    line-height: 30px;
+  }
+
+  @font-face {
+    font-family :'google-sans';
+    src: url('fonts/OpenSans-Medium.ttf');
+  }
+  /* @font-face {
+    font-family: 'Pokemon-Solid';
+    src: url('fonts/Pokemon Solid.ttf');
+} */

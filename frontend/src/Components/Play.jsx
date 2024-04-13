@@ -17,14 +17,19 @@ const [isLoading,setIsLoading] = useState(false)
 
   const StartGame = async()=>{
     let token = localStorage.getItem('token')
+    let response = null
     try{
-      let response = await api.get('/start/')
-      let data = response.data
-      setChatHistory(data)
+      setIsLoading(true)
+      response = await api.get('/start/')
+      
 
     }
     catch(error){
       console.log(error)
+    }
+    finally{
+      setIsLoading(false)
+      setChatHistory(response.data)
     }
     
   }
@@ -39,19 +44,20 @@ const [isLoading,setIsLoading] = useState(false)
       'prompt':decision
     }
     // api.defaults.params['prompt'] = formData
-    let response = null
     try{
-       response = await api.post('/prompt/',data)
-      //from this point is processing request -> loading. Or it throws a 500 error bc of safety
+      console.log('prompting!!')
       setIsLoading(true)
-    }
-    catch(error){
-      console.log('flagged for safety!!')
-    }
-    finally{
+      let response = await api.post('/prompt/',data)
+      //from this point is processing request -> loading. Or it throws a 500 error bc of safety
+      
       setIsLoading(false)
+      console.log(isLoading)
       setChatHistory(response.data)
     }
+    catch(error){
+      console.log(error)
+    }
+    
     
   
     
@@ -76,13 +82,20 @@ const [isLoading,setIsLoading] = useState(false)
     //this will just delete their session token.
     let response = await api.post('users/logout/')
     //also need to delete token from local storage, at least pre deployment.
-    localStorage.removeItem('token')
+    // localStorage.removeItem('token')
     //take them to home page.
     navigate('/')
 
   }
+
+  const handleImage = async ()=>{
+    let response = await api.post('image/')
+    console.log(response.data)
+  }
     return (
         <>
+        
+          
         <div className="bg-customColor min-h-screen text-white">
 
           <nav className="mb-3">
@@ -94,19 +107,31 @@ const [isLoading,setIsLoading] = useState(false)
         {
           chatHistory.map((chat,index)=>{
             if(index!=0){
-             return <ChatMessage key = {index}role = {chat['role']} message = {chat['parts']} setChatHistory = {setChatHistory}/>
+             return <ChatMessage key = {index}role = {chat['role']} message = {chat['parts']} setChatHistory = {setChatHistory} setIsLoading = {setIsLoading}/>
             }
            
 })
         }
-       
+            {/* {
+              !isLoading && 
+              <Button onClick={handleImage} variant="success">View image</Button>
+            } */}
+        {
+        
+        isLoading &&
+        <p className="text-white-500">Loading...</p>
+        }
+          <div>
           <Form>
           <Form.Label>Wild Card Decision</Form.Label>
         <Form.Group className="mb-3 flex justify-center" >
           <Form.Control onChange={(e)=>setDecision(e.target.value)} type="input" placeholder="Enter Decision" />
-          <Button onClick={handleDecison} variant="primary" type="submit">
-          Search
+          {
+            
+          <Button className="btn" disabled={isLoading}  onClick={handleDecison} variant="primary" type="submit">
+          Go
         </Button>
+}
         </Form.Group>
 
       </Form>
@@ -114,9 +139,11 @@ const [isLoading,setIsLoading] = useState(false)
       <div className="flex justify-center">
        <Button onClick={EndGame} variant="danger">End Game</Button>
       </div>
-      
-          
+
+          </div>
+
         </div>
+
         </>
     
     )
