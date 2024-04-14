@@ -17,26 +17,24 @@ const [isLoading,setIsLoading] = useState(false)
 
   const StartGame = async()=>{
     let token = localStorage.getItem('token')
-    let response = null
     try{
       setIsLoading(true)
-      response = await api.get('/start/')
+      let response = await api.post('/start/')
+      setIsLoading(false)
+      setChatHistory(response.data)
       
-
     }
     catch(error){
       console.log(error)
-    }
-    finally{
-      setIsLoading(false)
-      setChatHistory(response.data)
     }
     
   }
   useEffect(()=>{
     //done once
     StartGame()
+    
   },[])
+
 
   const handleDecison = async (event)=>{
     event.preventDefault()
@@ -82,40 +80,34 @@ const [isLoading,setIsLoading] = useState(false)
     //this will just delete their session token.
     let response = await api.post('users/logout/')
     //also need to delete token from local storage, at least pre deployment.
-    // localStorage.removeItem('token')
+    localStorage.removeItem('token')
     //take them to home page.
     navigate('/')
 
   }
 
-  const handleImage = async ()=>{
-    let response = await api.post('image/')
-    console.log(response.data)
-  }
+  
     return (
         <>
         
           
         <div className="bg-customColor min-h-screen text-white">
-
+        
           <nav className="mb-3">
           <h1 className="text-center">Time for an Adventure</h1>
             <p onClick={Logout} className="absolute top-0 right-0  hover:text-blue-500 cursor-pointer">Logout</p>
           </nav>
-         
+          
         
         {
           chatHistory.map((chat,index)=>{
             if(index!=0){
-             return <ChatMessage key = {index}role = {chat['role']} message = {chat['parts']} setChatHistory = {setChatHistory} setIsLoading = {setIsLoading}/>
+             return <ChatMessage key = {index}role = {chat['role']} message = {chat['parts']} setChatHistory = {setChatHistory} setIsLoading = {setIsLoading} isLoading = {isLoading} index = {index} length={chatHistory.length} existingImageUrl = {chat['image']} chatHistory = {chatHistory}/>
             }
            
 })
         }
-            {/* {
-              !isLoading && 
-              <Button onClick={handleImage} variant="success">View image</Button>
-            } */}
+             
         {
         
         isLoading &&

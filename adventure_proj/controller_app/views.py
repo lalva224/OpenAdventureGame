@@ -22,7 +22,8 @@ from google.oauth2 import service_account
 from django.http import JsonResponse
 import json
 import boto3
-
+import requests
+from django.views.decorators.http import require_http_methods
 
 load_dotenv()
 
@@ -182,3 +183,25 @@ def save_image(temp_image):
     except Exception as e:
           print('Error proxying image:', e)
           return JsonResponse({'error': 'An error occurred while proxying the image'}, status=500)
+
+
+class create_download_copy(APIView):
+    def post(self,request):
+        # URL of the JPEG image stored in AWS S3
+        s3_image_url = request.data.get('s3_url')
+        print('s3 image url:',s3_image_url)
+        # Send a GET request to download the image
+        try:
+            response = requests.get(s3_image_url)
+            if response.status_code == 200:
+                # Save the image to a local file
+                with open("local_image.jpeg", "wb") as f:
+                    f.write(response.content)
+                    print('success')
+                return Response(status=status.HTTP_200_OK)
+                # Now you have a local copy of the image named "local_image.jpeg"
+            else:
+                print("Failed to download image. Status code:", status=response.status_code)
+        except Exception as e:
+            print(e)
+            return Response(e, status=status.HTTP_400_BAD_REQUEST)

@@ -17,7 +17,7 @@ class chatMessage(models.Model):
     chatLog = models.ForeignKey(ChatHistory,on_delete=models.CASCADE,related_name='chatMessages')
     parts = models.TextField()
     role = models.TextField()
-    created_at = models.DateField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True)
     image = models.TextField(null=True,blank=True)
 
     def __str__(self):
