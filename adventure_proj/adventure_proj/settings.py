@@ -14,6 +14,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 from datetime import timedelta
+from user_app.utilities import HttpOnlyAuthentication
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -29,9 +30,9 @@ SECRET_KEY = os.getenv('DJANGO_SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
-
+ALLOWED_HOSTS = ["*"]
+SESSION_COOKIE_HTTPONLY = True
+CORS_ALLOW_CREDENTIALS = True
 # Application definition
 
 INSTALLED_APPS = [
@@ -48,14 +49,12 @@ INSTALLED_APPS = [
     'rest_framework.authtoken'
 ]
 
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
+        # 'user_app.utilities.HttpOnlyAuthentication',
     ],
-    'SIMPLE_JWT': {
-        'ACCESS_TOKEN_LIFETIME': timedelta(hours=5),  # Example: Token expires after 15 minutes
-        # Other optional settings like refresh token lifetime, etc.
-    }
 }
 
 MIDDLEWARE = [

@@ -23,7 +23,7 @@ from django.http import JsonResponse
 import json
 import boto3
 import requests
-from django.views.decorators.http import require_http_methods
+from user_app.views import HttpOnlyReq
 
 load_dotenv()
 
@@ -33,9 +33,7 @@ s3 = boto3.client(
     aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY")
 )
     
-class getNewChat(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+class getNewChat(HttpOnlyReq):
     def post(self,request):
         print('inside get new chat')
         #send original prompt, create new chatHistory object and save it.
@@ -63,9 +61,7 @@ class getNewChat(APIView):
         serialized_history = ChatHistorySerializer(chat_history)
         return Response(serialized_history.data['messages'],status=status.HTTP_200_OK)
 
-class Start(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+class Start(HttpOnlyReq):
 
     def post(self,request):
         #check chat history, if none create. If there is just retrieve it.
@@ -76,9 +72,7 @@ class Start(APIView):
         except ChatHistory.DoesNotExist:
             return getNewChat.post(self,request)
         
-class PromptGemini(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+class PromptGemini(HttpOnlyReq):
 
     def post(self,request):
         #check if this user has chatHistory. If not then create a new message sending the og prompt
@@ -109,18 +103,14 @@ class PromptGemini(APIView):
         return Response(updated_serialized_history.data['messages'],status=status.HTTP_200_OK)
 
 
-class End_Game(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]      
+class End_Game(HttpOnlyReq):     
     def delete(self,request):
         #delete chat history and bring us a new chat
         chat_history = ChatHistory.objects.get(client=request.user)   
         chat_history.delete() 
         return Response(status=status.HTTP_204_NO_CONTENT)
             
-class get_Image(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
+class get_Image(HttpOnlyReq):
 
     def post(self,request):
         #get chat history
@@ -185,23 +175,3 @@ def save_image(temp_image):
           return JsonResponse({'error': 'An error occurred while proxying the image'}, status=500)
 
 
-class create_download_copy(APIView):
-    def post(self,request):
-        # URL of the JPEG image stored in AWS S3
-        s3_image_url = request.data.get('s3_url')
-        print('s3 image url:',s3_image_url)
-        # Send a GET request to download the image
-        try:
-            response = requests.get(s3_image_url)
-            if response.status_code == 200:
-                # Save the image to a local file
-                with open("local_image.jpeg", "wb") as f:
-                    f.write(response.content)
-                    print('success')
-                return Response(status=status.HTTP_200_OK)
-                # Now you have a local copy of the image named "local_image.jpeg"
-            else:
-                print("Failed to download image. Status code:", status=response.status_code)
-        except Exception as e:
-            print(e)
-            return Response(e, status=status.HTTP_400_BAD_REQUEST)
