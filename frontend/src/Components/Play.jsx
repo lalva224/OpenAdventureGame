@@ -13,10 +13,12 @@ const [chatHistory,setChatHistory] = useState([])
 const [decision,setDecision] = useState('')
 const navigate = useNavigate()
 const [isLoading,setIsLoading] = useState(false)
+const [violatesSafety,setViolatesSafety] = useState(false)
   //make initial request
-
+//   useEffect(()=>{
+//     window.addEventListener('beforeunload', StartGame);
+// },[])
   const StartGame = async()=>{
-    let token = localStorage.getItem('token')
     try{
       setIsLoading(true)
       let response = await api.post('/start/')
@@ -53,7 +55,12 @@ const [isLoading,setIsLoading] = useState(false)
       setChatHistory(response.data)
     }
     catch(error){
-      console.log(error)
+      setIsLoading(false)
+      setViolatesSafety(true)
+      console.log('safety')
+      setTimeout(()=>{
+        setViolatesSafety(false)
+      },3000)
     }
     
     
@@ -80,8 +87,8 @@ const [isLoading,setIsLoading] = useState(false)
     //this will just delete their session token.
     let response = await api.post('users/logout/')
     //also need to delete token from local storage, at least pre deployment.
-    localStorage.removeItem('token')
-    //take them to home page.
+    // localStorage.removeItem('token')
+    // take them to home page.
     navigate('/')
 
   }
@@ -113,6 +120,10 @@ const [isLoading,setIsLoading] = useState(false)
         isLoading &&
         <p className="text-white-500">Loading...</p>
         }
+        {
+          violatesSafety && 
+          <p className="text-center text-red-500 font-bold">Gemini flags this for safety.Sorry!</p>
+        }
           <div>
           <Form>
           <Form.Label>Wild Card Decision</Form.Label>
@@ -128,6 +139,7 @@ const [isLoading,setIsLoading] = useState(false)
 
       </Form>
 
+      
       <div className="flex justify-center">
        <Button onClick={EndGame} variant="danger">End Game</Button>
       </div>

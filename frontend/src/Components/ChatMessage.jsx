@@ -19,6 +19,8 @@ export const  ChatMessage =({role,message, setChatHistory, setIsLoading,isLoadin
     const [pendingImage,setPendingImage] = useState(false)
     const [imageUrl,setImageUrl] = useState('')
     const [downloadUrl,setDownloadUrl] = useState(null)
+    const [violatesSafety,setViolatesSafety] = useState(false)
+
     
     useEffect(()=>{
         if(existingImageUrl){
@@ -44,11 +46,22 @@ export const  ChatMessage =({role,message, setChatHistory, setIsLoading,isLoadin
     },[])
 
     const handleImage = async ()=>{
-        setPendingImage(true)
-        let response = await api.post('image/')
-        setPendingImage(false)
-        setImageUrl(response.data)
-        setShowImage(true)
+        
+        try{
+            setPendingImage(true)
+            let response = await api.post('image/')
+            setPendingImage(false)
+            setImageUrl(response.data)
+            setShowImage(true)
+        }
+        catch(error){
+            setPendingImage(false)
+            setViolatesSafety(true)
+            setTimeout(()=>{
+                setViolatesSafety(false)
+            },3000)
+        }
+        
       }
 
     const copy_img_url = async ()=>{
@@ -69,23 +82,13 @@ export const  ChatMessage =({role,message, setChatHistory, setIsLoading,isLoadin
         fr.addEventListener('load',()=>{
             const res = fr.result
             setDownloadUrl(res)
-            console.log(res)
         })
     }
-   const download = ()=>{
-        if(downloadUrl!=null){
-            const a_tag = document.createElement('a')
-        a_tag.setAttribute('download',`image ${index} open adventure game`)
-        a_tag.href = downloadUrl
-        a_tag.click()
-        }
-     
-   }
+ 
 
    useEffect(()=>{
     copy_img_url()
    })
-
     return (
         <>
         <div>
@@ -118,7 +121,10 @@ export const  ChatMessage =({role,message, setChatHistory, setIsLoading,isLoadin
                 showImage&&(
                     <div className="flex justify-center">
                         <img className = 'w-1/4 h-1/4'src = {imageUrl}/>
-                        <img  className="h-[2rem] w-[2rem]" onClick={download} src = {DownloadSvg}/>
+                        <a href = {downloadUrl} download={`image ${index} open adventure game`}>
+                        <img  className="h-[2rem] w-[2rem]"  src = {DownloadSvg}/>
+                        </a>
+                       
                         
 
 
@@ -126,6 +132,10 @@ export const  ChatMessage =({role,message, setChatHistory, setIsLoading,isLoadin
                     
                 )
             }
+           {
+          violatesSafety && 
+          <p className="text-center text-red-500 font-bold">Gemini flags this for safety.Sorry!</p>
+        }
 
             {
                 !showImage && index==length-1  && !isLoading &&(

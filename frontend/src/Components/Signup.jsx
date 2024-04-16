@@ -4,13 +4,14 @@ import {useNavigate} from 'react-router-dom';
 import Form from 'react-bootstrap/Form';
 import { api } from "../utilities";
 import { useState } from "react";
+
 export function ChooseSignUpOrSignIn(){
     const navigate = useNavigate()
     console.log('in choose')
    return (
     <>
-    <div className="text-center">
-    <p>Welcome to Adventue Game!</p>
+    <div className="text-center home-background h-screen">
+    <p className="home-header">Welcome to Adventue Game</p>
     <div className="flex justify-around">
         <Button onClick={()=>navigate('/signup')} variant="primary">Click here for SignUp</Button>
         <Button onClick = {()=>navigate('/signin')}variant="primary">Click here for SignIn</Button>
@@ -23,6 +24,7 @@ export function SignUp(){
     const navigate = useNavigate()
     const [username,setUsername] = useState('')
     const [password,setPassword] = useState('')
+    const [showError, setShowError] = useState(false)
     const handleSubmit = async (event)=>{
         event.preventDefault();
        let data = {
@@ -30,24 +32,31 @@ export function SignUp(){
             'password':password
         }
         console.log(data)
-        let response = await api.post('users/signup/',data)
+        try{
+            let response = await api.post('users/signup/',data)
         
-        if(response.status==200){
-            const {token}= response.data
-            console.log(token)
-           localStorage.setItem('token',token)
+            // const {token}= response.data
+            // console.log(token)
+        //    localStorage.setItem('token',token)
            //for all future requests
-            api.defaults.headers.common['Authorization'] = `Token ${token}`
+            // api.defaults.headers.common['Authorization'] = `Token ${token}`
             navigate('/play')
+            console.log('we are through!!')
+        
         }
-        else if(response.status==500){
-            return <p>User already exists!</p>
+        catch(error){
+            console.log(error)
+            setShowError(true)
+            setTimeout(()=>{
+                setShowError(false)
+            },3000)
         }
     }
     
     return (
         <>
-        <h1 className="text-center">Sign up!!</h1>
+        <div className="signup-background h-screen">
+        <h1 className="text-center">Sign up</h1>
         <div className="text-center flex justify-center">
             
                 <Form>
@@ -68,6 +77,11 @@ export function SignUp(){
             </Button>
         </Form>
         </div>
+        {
+            showError &&
+            <p className="text-center text-red-500 font-bold">User already exists!</p>
+        }
+        </div>
         </>
     )
 }
@@ -76,6 +90,7 @@ export function SignIn(){
     const navigate = useNavigate()
     const [username,setUsername] = useState('')
     const [password,setPassword] = useState('')
+    const [showError,setShowError] = useState(false)
 
     const handleSubmit = async (event)=>{
         event.preventDefault()
@@ -85,23 +100,29 @@ export function SignIn(){
         }
         console.log(data)
         //if we're logged out we will be under a different token. Get rid of this header and allow for a new token to be created.
-        api.defaults.headers.common['Authorization'] = null
-        let response = await api.post('users/login/',data)
-        console.log(response.data)
-        const {token} = response.data
-        console.log(token)
-        localStorage.setItem('token',token)
-        api.defaults.headers.common['Authorization'] = `token ${token}`
-        if(response.status==200){
+        try{
+            let response = await api.post('users/login/',data)
+            console.log(response.data)
+            // const {token} = response.data
+            // console.log(token)
+            // localStorage.setItem('token',token)
+            // api.defaults.headers.common['Authorization'] = `token ${token}`
             navigate('/play')
+            console.log('we through!!!!')
         }
-        else{
-            return <p>User Not found!</p>
+        catch(error){
+            console.log(error)
+            setShowError(true)
+            setTimeout(()=>{
+                setShowError(false)
+            },3000)
         }
+
     }
     return (
         <>
-        <h1 className="text-center">Sign In!!</h1>
+        <div className="signup-background h-screen">
+        <h1 className="text-center">Sign In</h1>
         <div className="text-center flex justify-center">
             
                 <Form>
@@ -121,6 +142,12 @@ export function SignIn(){
             Submit
             </Button>
         </Form>
+        </div>
+
+        {
+            showError &&
+            <p className="text-center text-red-500 font-bold">user not found!</p>
+        }
         </div>
         </>
     )
