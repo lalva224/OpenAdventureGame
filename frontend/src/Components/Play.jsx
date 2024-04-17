@@ -78,6 +78,7 @@ const [violatesSafety,setViolatesSafety] = useState(false)
       //delete chat history state
       setChatHistory([])
       console.log('chat history deleted!!')
+      localStorage.removeItem('token')
       //start a new game!!
       StartGame()
     }

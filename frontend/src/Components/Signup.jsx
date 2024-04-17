@@ -29,17 +29,17 @@ export function SignUp(){
         event.preventDefault();
        let data = {
             'username':username,
-            'password':password
+            'password':password 
         }
         console.log(data)
         try{
             let response = await api.post('users/signup/',data)
         
-            // const {token}= response.data
-            // console.log(token)
-        //    localStorage.setItem('token',token)
-           //for all future requests
-            // api.defaults.headers.common['Authorization'] = `Token ${token}`
+            const {token}= response.data
+            console.log(token)
+           localStorage.setItem('token',token)
+        //    for all future requests
+            api.defaults.headers.common['Authorization'] = `Token ${token}`
             navigate('/play')
             console.log('we are through!!')
         
@@ -103,10 +103,10 @@ export function SignIn(){
         try{
             let response = await api.post('users/login/',data)
             console.log(response.data)
-            // const {token} = response.data
-            // console.log(token)
-            // localStorage.setItem('token',token)
-            // api.defaults.headers.common['Authorization'] = `token ${token}`
+            const {token} = response.data
+            console.log(token)
+            localStorage.setItem('token',token)
+            api.defaults.headers.common['Authorization'] = `token ${token}`
             navigate('/play')
             console.log('we through!!!!')
         }
